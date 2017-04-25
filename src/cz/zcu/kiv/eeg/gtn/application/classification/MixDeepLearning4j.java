@@ -2,6 +2,7 @@ package cz.zcu.kiv.eeg.gtn.application.classification;
 
 import cz.zcu.kiv.eeg.gtn.application.featureextraction.IFeatureExtraction;
 import org.apache.commons.io.FileUtils;
+import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
@@ -9,16 +10,15 @@ import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.AutoEncoder;
+import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.api.IterationListener;
-import org.deeplearning4j.util.ModelSerializer;
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.deeplearning4j.ui.api.UIServer;
-import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.ui.stats.StatsListener;
 import org.deeplearning4j.ui.storage.InMemoryStatsStorage;
-import org.deeplearning4j.optimize.listeners.*;
+import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
@@ -36,7 +36,7 @@ import java.util.List;
 /**
  * Created by lukasvareka on 27. 6. 2016.
  */
-public class SDADeepLearning4j implements IERPClassifier {
+public class MixDeepLearning4j implements IERPClassifier {
     private final int NEURON_COUNT_DEFAULT = 30;    //default number of neurons
     private IFeatureExtraction fe;                //type of feature extraction (MatchingPursuit, FilterAndSubampling or WaveletTransform)
     private MultiLayerNetwork model;            //multi layer neural network with a logistic output layer and multiple hidden neuralNets
@@ -45,12 +45,12 @@ public class SDADeepLearning4j implements IERPClassifier {
 
 
     /*Default constructor*/
-    public SDADeepLearning4j() {
+    public MixDeepLearning4j() {
         this.neuronCount = NEURON_COUNT_DEFAULT; // sets count of neurons in layer(0) to default number
     }
 
     /*Parametric constructor */
-    public SDADeepLearning4j(int neuronCount) {
+    public MixDeepLearning4j(int neuronCount) {
         this.neuronCount = neuronCount; // sets count of neurons in layer(0) to param
     }
 
@@ -59,7 +59,7 @@ public class SDADeepLearning4j implements IERPClassifier {
     public double classify(double[][] epoch) {
         double[] featureVector = this.fe.extractFeatures(epoch); // Extracting features to vector
         INDArray features = Nd4j.create(featureVector); // Creating INDArray with extracted features
-        return model.output(features).getDouble(0); // Result of classifying
+        return model.output(features, Layer.TrainingMode.TEST).getDouble(0); // Result of classifying
     }
 
     @Override
@@ -84,21 +84,23 @@ public class SDADeepLearning4j implements IERPClassifier {
             }
             features_matrix[i] = features; // Saving features to features matrix
         }
+
         // Creating INDArrays and DataSet
         INDArray output_data = Nd4j.create(labels); // Create INDArray with labels(targets)
         INDArray input_data = Nd4j.create(features_matrix); // Create INDArray with features(data)
         DataSet dataSet = new DataSet(input_data, output_data); // Create dataSet with features and labels
         SplitTestAndTrain tat = dataSet.splitTestAndTrain(0.8);
         Nd4j.ENFORCE_NUMERICAL_STABILITY = true; // Setting to enforce numerical stability
+
         // Building a neural net
         build(numRows, numColumns, seed, listenerFreq);
 
         System.out.println("Train model....");
-        model.fit(tat.getTrain()); // Learning of neural net with training data
+        model.fit(dataSet); // Learning of neural net with training data
         model.finetune();
+
         Evaluation eval = new Evaluation(numColumns);
-        //eval.eval(dataSet.getLabels(), model.output(dataSet.getFeatureMatrix(), Layer.TrainingMode.TEST));
-        eval.eval(dataSet.getLabels(), model.output(dataSet.getFeatureMatrix()));
+        eval.eval(dataSet.getLabels(), model.output(dataSet.getFeatureMatrix(), Layer.TrainingMode.TEST));
         System.out.println(eval.stats());
     }
 
@@ -107,37 +109,37 @@ public class SDADeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(1100)
+                .iterations(1400)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.008)
+                .learningRate(0.005)
+                //.dropOut(0.5)
                 .updater(Updater.NESTEROVS).momentum(0.9)
-                //.regularization(true).dropOut(0.99)
+                .regularization(true).dropOut(0.5)
                 // .regularization(true).l2(1e-4)
                 .list()
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
-                        .nOut(48)
-                        .weightInit(WeightInit.XAVIER)
+                        .nOut(64)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
                         .corruptionLevel(0.2) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.MCXENT)
+                        .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new AutoEncoder.Builder().nOut(24).nIn(48)
-                        .weightInit(WeightInit.XAVIER)
+                .layer(1, new DenseLayer.Builder().nIn(64).nOut(200)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
-                        //.corruptionLevel(0.1) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.MCXENT)
+                        //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(2, new AutoEncoder.Builder().nOut(12).nIn(24)
-                        .weightInit(WeightInit.XAVIER)
+                .layer(2, new AutoEncoder.Builder().nOut(24).nIn(200)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         //.corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.MCXENT)
                         .build())
-                .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                       .nOut(outputNum).nIn(12).build())
+                       .nOut(outputNum).nIn(24).build())
                 .pretrain(false).backprop(true).build();
         model = new MultiLayerNetwork(conf); // Passing built configuration to instance of multilayer network
         model.init(); // Initialize mode
