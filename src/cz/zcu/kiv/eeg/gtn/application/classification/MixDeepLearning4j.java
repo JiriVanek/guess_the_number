@@ -42,6 +42,7 @@ public class MixDeepLearning4j implements IERPClassifier {
     private MultiLayerNetwork model;            //multi layer neural network with a logistic output layer and multiple hidden neuralNets
     private int neuronCount;                    // Number of neurons
     private int iterations;                    //Iterations used to classify
+    StatsStorage statsStorage;
 
 
     /*Default constructor*/
@@ -109,12 +110,12 @@ public class MixDeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(1400)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .iterations(2500)
+                //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.005)
-                //.dropOut(0.5)
-                .updater(Updater.NESTEROVS).momentum(0.9)
-                .regularization(true).dropOut(0.5)
+                .dropOut(0.5)
+                .updater(Updater.NESTEROVS).momentum(0.8)
+                .regularization(true)
                 // .regularization(true).l2(1e-4)
                 .list()
                 .layer(0, new AutoEncoder.Builder()
@@ -123,14 +124,14 @@ public class MixDeepLearning4j implements IERPClassifier {
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
                         .corruptionLevel(0.2) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.XENT)
+                        .lossFunction(LossFunctions.LossFunction.MCXENT)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(64).nOut(200)
+                .layer(1, new DenseLayer.Builder().nIn(64).nOut(128)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(2, new AutoEncoder.Builder().nOut(24).nIn(200)
+                .layer(2, new AutoEncoder.Builder().nIn(128).nOut(64)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         //.corruptionLevel(0.1) // Set level of corruption
@@ -139,20 +140,20 @@ public class MixDeepLearning4j implements IERPClassifier {
                 .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                       .nOut(outputNum).nIn(24).build())
+                       .nOut(outputNum).nIn(64).build())
                 .pretrain(false).backprop(true).build();
         model = new MultiLayerNetwork(conf); // Passing built configuration to instance of multilayer network
         model.init(); // Initialize mode
 
 
-        UIServer uiServer = UIServer.getInstance();
-        StatsStorage statsStorage = new InMemoryStatsStorage();         //Alternative: new FileStatsStorage(File), for saving and loading later
+        //UIServer uiServer = UIServer.getInstance();
+        //statsStorage = new InMemoryStatsStorage();         //Alternative: new FileStatsStorage(File), for saving and loading later
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
-        uiServer.attach(statsStorage);
+        //uiServer.attach(statsStorage);
 
         ArrayList listenery = new ArrayList();
         listenery.add(new ScoreIterationListener(500));
-        listenery.add(new StatsListener(statsStorage));
+        //listenery.add(new StatsListener(statsStorage));
         model.setListeners(listenery);
         //model.setListeners(new ScoreIterationListener(listenerFreq));// Setting listeners
         //model.setListeners(new HistogramIterationListener(10));
