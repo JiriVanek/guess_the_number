@@ -110,11 +110,11 @@ public class MixDeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(2500)
+                .iterations(3000)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.005)
                 .dropOut(0.5)
-                .updater(Updater.NESTEROVS).momentum(0.8)
+                .updater(Updater.NESTEROVS).momentum(0.9)
                 .regularization(true)
                 // .regularization(true).l2(1e-4)
                 .list()
