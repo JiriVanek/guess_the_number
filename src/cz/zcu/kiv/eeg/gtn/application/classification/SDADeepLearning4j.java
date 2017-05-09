@@ -118,19 +118,19 @@ public class SDADeepLearning4j implements IERPClassifier {
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
                         .nOut(48)
-                        .weightInit(WeightInit.XAVIER)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
                         .corruptionLevel(0.2) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.MCXENT)
                         .build())
                 .layer(1, new AutoEncoder.Builder().nOut(24).nIn(48)
-                        .weightInit(WeightInit.XAVIER)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.LEAKYRELU)
                         //.corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.MCXENT)
                         .build())
                 .layer(2, new AutoEncoder.Builder().nOut(12).nIn(24)
-                        .weightInit(WeightInit.XAVIER)
+                        .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         //.corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.MCXENT)
