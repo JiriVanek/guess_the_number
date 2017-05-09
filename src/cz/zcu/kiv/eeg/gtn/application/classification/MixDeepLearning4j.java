@@ -122,13 +122,13 @@ public class MixDeepLearning4j implements IERPClassifier {
                         .nIn(numRows)
                         .nOut(64)
                         .weightInit(WeightInit.RELU)
-                        .activation(Activation.LEAKYRELU)
+                        .activation(Activation.RELU)
                         .corruptionLevel(0.) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
                 .layer(1, new DenseLayer.Builder().nIn(64).nOut(128)
                         .weightInit(WeightInit.RELU)
-                        .activation(Activation.LEAKYRELU)
+                        .activation(Activation.RELU)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
                 .layer(2, new AutoEncoder.Builder().nIn(128).nOut(64)
