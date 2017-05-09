@@ -107,9 +107,10 @@ public class SDADeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(1100)
+                .iterations(3000)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.008)
+                .learningRate(0.005)
+                .dropOut(0.50)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 //.regularization(true).dropOut(0.99)
                 // .regularization(true).l2(1e-4)
@@ -142,15 +143,15 @@ public class SDADeepLearning4j implements IERPClassifier {
         model = new MultiLayerNetwork(conf); // Passing built configuration to instance of multilayer network
         model.init(); // Initialize mode
 
-
+        ArrayList listenery = new ArrayList();
+        listenery.add(new ScoreIterationListener(500));
+        /*
         UIServer uiServer = UIServer.getInstance();
         StatsStorage statsStorage = new InMemoryStatsStorage();         //Alternative: new FileStatsStorage(File), for saving and loading later
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
         uiServer.attach(statsStorage);
-
-        ArrayList listenery = new ArrayList();
-        listenery.add(new ScoreIterationListener(500));
         listenery.add(new StatsListener(statsStorage));
+        */
         model.setListeners(listenery);
         //model.setListeners(new ScoreIterationListener(listenerFreq));// Setting listeners
         //model.setListeners(new HistogramIterationListener(10));
