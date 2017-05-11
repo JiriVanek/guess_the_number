@@ -106,33 +106,28 @@ public class MLPDeepLearning4j implements IERPClassifier {
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(4500)
+                .iterations(2500)
+                .activation(Activation.LEAKYRELU)
+                .weightInit(WeightInit.XAVIER)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.0009)
-                //.updater(Updater.NESTEROVS).momentum(0.9)
-                //.l1(1e-1)
-                //.regularization(true)
+                .learningRate(0.005)
+                .dropOut(0.5)
+                .updater(Updater.NESTEROVS).momentum(0.5)
+                //.regularization(true).l2(1e-4)
                 .list()
-                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(400)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.RELU)
-                        //.corruptionLevel(0.2) // Set level of corruption
+                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(100)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(400).nOut(200)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.RELU)
-                        //.corruptionLevel(0.2) // Set level of corruption
+                .layer(1, new DenseLayer.Builder().nIn(100).nOut(50)
                         .build())
-                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.RELU)
-                        .nIn(200).nOut(outputNum).build())
-                .pretrain(true).backprop(true).build();
+                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                        .activation(Activation.SOFTMAX)
+                        .nIn(50).nOut(outputNum).build())
+                .pretrain(false).backprop(true).build();
 
 
         model = new MultiLayerNetwork(conf); // Passing built configuration to instance of multilayer network
         model.init(); // Initialize mode
-        model.setListeners(new ScoreIterationListener(100));// Setting listeners
+        model.setListeners(new ScoreIterationListener(500));// Setting listeners
         // model.setListeners(new HistogramIterationListener(10));
     }
 
