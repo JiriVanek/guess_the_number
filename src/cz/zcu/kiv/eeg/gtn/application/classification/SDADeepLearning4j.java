@@ -120,7 +120,7 @@ public class SDADeepLearning4j implements IERPClassifier {
                         .nOut(48)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
-                        .corruptionLevel(0.2) // Set level of corruption
+                        .corruptionLevel(0.15) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
                 .layer(1, new AutoEncoder.Builder().nOut(24).nIn(48)
