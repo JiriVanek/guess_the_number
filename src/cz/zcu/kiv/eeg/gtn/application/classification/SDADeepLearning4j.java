@@ -107,7 +107,7 @@ public class SDADeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(3000)
+                .iterations(3500)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.005)
                 .dropOut(0.50)
@@ -120,13 +120,13 @@ public class SDADeepLearning4j implements IERPClassifier {
                         .nOut(48)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
-                        .corruptionLevel(0.15) // Set level of corruption
+                        .corruptionLevel(0.20) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
                 .layer(1, new AutoEncoder.Builder().nOut(24).nIn(48)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
-                        //.corruptionLevel(0.1) // Set level of corruption
+                        .corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
                 .layer(2, new AutoEncoder.Builder().nOut(12).nIn(24)
