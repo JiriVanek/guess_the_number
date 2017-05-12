@@ -111,7 +111,7 @@ public class MLPDeepLearning4j implements IERPClassifier {
                 .weightInit(WeightInit.RELU)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.003)
-                .dropOut(0.6)
+                .dropOut(0.7)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 //.regularization(true).l2(1e-4)
                 .list()
