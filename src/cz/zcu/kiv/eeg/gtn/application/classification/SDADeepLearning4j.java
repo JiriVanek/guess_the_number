@@ -107,6 +107,7 @@ public class SDADeepLearning4j implements IERPClassifier {
         System.out.print("Build model....SDA");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
+
                 .iterations(3500)
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.005)
