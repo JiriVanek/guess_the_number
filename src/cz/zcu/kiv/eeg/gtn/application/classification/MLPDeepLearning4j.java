@@ -106,7 +106,7 @@ public class MLPDeepLearning4j implements IERPClassifier {
 
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 //.seed(seed)
-                .iterations(3500)
+                .iterations(3000)
                 .activation(Activation.LEAKYRELU)
                 .weightInit(WeightInit.RELU)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
