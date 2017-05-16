@@ -64,9 +64,9 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
     private int iterations;                    //Iterations used to classify
     private String directory = "C:\\Temp\\";
     private int maxTime =5; //max time in minutes
-    private int maxEpochs = 10000;
+    private int maxEpochs = 5000;
     private EarlyStoppingResult result;
-    private int noImprovementEpochs = 20;
+    private int noImprovementEpochs = 10;
     private EarlyStoppingConfiguration esConf;
     private String pathname = "C:\\Temp\\SDAEStop"; //pathname+file name for saving model
 
@@ -152,6 +152,12 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
 
         //create Estop trainer
         EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf, net, new ListDataSetIterator(testAndTrain.getTrain().asList(), 100));
+
+
+        //Then add the StatsListener to collect this information from the network, as it trains
+        ArrayList listeners = new ArrayList();
+        /*
+        listeners.add(new ScoreIterationListener(100));
         //prepare UI
         UIServer uiServer = UIServer.getInstance();
         //Configure where the network information (gradients, score vs. time etc) is to be stored. Here: store in memory.
@@ -159,10 +165,8 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
         uiServer.attach(statsStorage);
 
-        //Then add the StatsListener to collect this information from the network, as it trains
-        ArrayList listeners = new ArrayList();
-        listeners.add(new ScoreIterationListener(100));
         listeners.add(new StatsListener(statsStorage));
+        */
         net.setListeners(listeners);
         result = trainer.fit();
 
@@ -185,36 +189,28 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
                 .seed(seed) // Locks in weight initialization for tuning
                 //.weightInit(WeightInit.XAVIER)
                 //.activation(Activation.LEAKYRELU)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.05)
-                .iterations(1)
-                //.momentum(0.5) // Momentum rate
+                //.iterations(1)
+                .updater(Updater.NESTEROVS).momentum(0.9)
+                .weightInit(WeightInit.XAVIER)
+                .activation(Activation.LEAKYRELU)
                 //.momentumAfter(Collections.singletonMap(3, 0.9)) //Map of the iteration to the momentum rate to apply at that iteration
                 .list() // # NN layers (doesn't count input layer)
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
-                        .nOut(96)
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.LEAKYRELU)
+                        .nOut(64)
                         //.corruptionLevel(0.2) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.MCXENT)
+                        .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new AutoEncoder.Builder().nOut(48).nIn(96)
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.LEAKYRELU)
+                .layer(1, new AutoEncoder.Builder().nOut(32).nIn(64)
                         //.corruptionLevel(0.1) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.MCXENT)
+                        .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(2, new AutoEncoder.Builder().nOut(12).nIn(48)
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.RELU)
-                        //.corruptionLevel(0.1) // Set level of corruption
-                        .lossFunction(LossFunction.MCXENT)
-                        .build())
-                .layer(3, new OutputLayer.Builder(LossFunction.MCXENT)
+                .layer(2, new OutputLayer.Builder(LossFunction.XENT)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                        .nOut(outputNum).nIn(12).build())
+                        .nOut(outputNum).nIn(32).build())
                 .pretrain(false) // Do pre training
                 .backprop(true)
                 .build(); // Build on set configuration
