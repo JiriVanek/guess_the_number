@@ -114,7 +114,7 @@ public class SDADeepLearning4j implements IERPClassifier {
                 .dropOut(0.50)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 .weightInit(WeightInit.RELU)
-                .activation(Activation.RELU)
+                .activation(Activation.LEAKYRELU)
                 //.regularization(true).dropOut(0.99)
                 // .regularization(true).l2(1e-4)
                 .list()
