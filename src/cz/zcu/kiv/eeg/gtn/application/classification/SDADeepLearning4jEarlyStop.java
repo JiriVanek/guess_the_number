@@ -187,8 +187,6 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
         System.out.print("Build model....SDA EStop");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder() // Starting builder pattern
                 .seed(seed) // Locks in weight initialization for tuning
-                //.weightInit(WeightInit.XAVIER)
-                //.activation(Activation.LEAKYRELU)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
                 .learningRate(0.05)
                 //.iterations(1)
@@ -207,7 +205,7 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
                         //.corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(2, new OutputLayer.Builder(LossFunction.XENT)
+                .layer(2, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
                         .nOut(outputNum).nIn(32).build())
