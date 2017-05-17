@@ -144,7 +144,7 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
                 //.epochTerminationConditions(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs))
                 //
                 //.scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(dataSet.asList()),true))
-                .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTest().asList(), 100), true))
+                .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTest().asList(), 200), true))
                 .evaluateEveryNEpochs(3)
                 .modelSaver(saver)
                 .epochTerminationConditions(list)
@@ -191,7 +191,7 @@ public class SDADeepLearning4jEarlyStop implements IERPClassifier {
                 .learningRate(0.05)
                 //.iterations(1)
                 .updater(Updater.NESTEROVS).momentum(0.9)
-                .weightInit(WeightInit.XAVIER)
+                .weightInit(WeightInit.RELU)
                 .activation(Activation.LEAKYRELU)
                 //.momentumAfter(Collections.singletonMap(3, 0.9)) //Map of the iteration to the momentum rate to apply at that iteration
                 .list() // # NN layers (doesn't count input layer)
