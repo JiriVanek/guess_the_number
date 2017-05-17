@@ -55,9 +55,9 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
     private int iterations;                    //Iterations used to classify
     private Model model1;                       //model from new lbraries
     private int maxTime =5; //max time in minutes
-    private int maxEpochs = 1500;
+    private int maxEpochs = 3000;
     private EarlyStoppingResult result;
-    private int noImprovementEpochs = 30;
+    private int noImprovementEpochs = 10;
     private EarlyStoppingConfiguration esConf;
     private String pathname = "C:\\Temp\\MLPEStop"; //pathname+file name for saving model
     private String directory = "C:\\Temp\\";
@@ -124,27 +124,28 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
 
         // Building a neural net
         MultiLayerConfiguration conf = build(numRows, numColumns, seed, listenerFreq);
-        SplitTestAndTrain testAndTrain = dataSet.splitTestAndTrain(80);
+        //SplitTestAndTrain testAndTrain = dataSet.splitTestAndTrain(80);
 
         //EarlyStoppingModelSaver saver = new LocalFileModelSaver(directory);
         EarlyStoppingModelSaver saver = new InMemoryModelSaver();
 
         List<EpochTerminationCondition> list = new ArrayList<EpochTerminationCondition>(2);
         list.add(new MaxEpochsTerminationCondition(maxEpochs));
-        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs));
+        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.00001));
 
         esConf = new EarlyStoppingConfiguration.Builder()
                 //.epochTerminationConditions(new MaxEpochsTerminationCondition(maxEpochs))
                 //.epochTerminationConditions(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs))
                 .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(maxTime, TimeUnit.MINUTES))
                 //.scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTest().asList(), 100), true))
-                .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTrain().asList(), 100), true))
-                .evaluateEveryNEpochs(3)
+                .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(dataSet.asList(), 200), true))
+                .evaluateEveryNEpochs(2)
                 .modelSaver(saver)
                 .epochTerminationConditions(list)
                 .build();
 
-        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf,conf,new ListDataSetIterator(testAndTrain.getTrain().asList(), 100));
+        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf,conf,new ListDataSetIterator(dataSet.asList(), 200));
+
 //Conduct early stopping training:
         this.result = trainer.fit();
 
@@ -159,7 +160,7 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
         this.model = (MultiLayerNetwork) result.getBestModel();
 
         Evaluation eval = new Evaluation(numColumns);
-        eval.eval(testAndTrain.getTest().getLabels(), model.output(testAndTrain.getTest().getFeatureMatrix(), Layer.TrainingMode.TEST));
+        eval.eval(dataSet.getLabels(), model.output(dataSet.getFeatureMatrix(), Layer.TrainingMode.TEST));
         System.out.println(eval.stats());
     }
 
@@ -168,25 +169,23 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
         System.out.print("Build model....");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                 .seed(seed)
-                .iterations(10)
+                //.iterations(5)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.0005)
-               // .updater(Updater.NESTEROVS).momentum(0.9)
+                .learningRate(0.05)
+               .updater(Updater.NESTEROVS).momentum(0.9)
+                .weightInit(WeightInit.RELU)
+                .activation(Activation.LEAKYRELU)
                 .list()
-                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(400)
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.RELU)
+                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(200)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(400).nOut(200)
-                        .weightInit(WeightInit.XAVIER)
-                        .activation(Activation.RELU)
+                .layer(1, new DenseLayer.Builder().nIn(200).nOut(100)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.RELU)
-                        .nIn(200).nOut(outputNum).build())
+                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                        .weightInit(WeightInit.XAVIER)
+                        .activation(Activation.SOFTMAX)
+                        .nIn(100).nOut(outputNum).build())
                 .pretrain(false).backprop(true).build();
 
 
