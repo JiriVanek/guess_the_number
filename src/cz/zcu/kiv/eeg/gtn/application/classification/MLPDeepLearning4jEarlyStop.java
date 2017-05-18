@@ -57,7 +57,7 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
     private int maxTime =5; //max time in minutes
     private int maxEpochs = 3000;
     private EarlyStoppingResult result;
-    private int noImprovementEpochs = 10;
+    private int noImprovementEpochs = 5;
     private EarlyStoppingConfiguration esConf;
     private String pathname = "C:\\Temp\\MLPEStop"; //pathname+file name for saving model
     private String directory = "C:\\Temp\\";
@@ -131,7 +131,7 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
 
         List<EpochTerminationCondition> list = new ArrayList<EpochTerminationCondition>(2);
         list.add(new MaxEpochsTerminationCondition(maxEpochs));
-        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.00001));
+        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.001));
 
         esConf = new EarlyStoppingConfiguration.Builder()
                 //.epochTerminationConditions(new MaxEpochsTerminationCondition(maxEpochs))
@@ -139,7 +139,7 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
                 .iterationTerminationConditions(new MaxTimeIterationTerminationCondition(maxTime, TimeUnit.MINUTES))
                 //.scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTest().asList(), 100), true))
                 .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(dataSet.asList(), 200), true))
-                .evaluateEveryNEpochs(2)
+                .evaluateEveryNEpochs(3)
                 .modelSaver(saver)
                 .epochTerminationConditions(list)
                 .build();
@@ -171,7 +171,8 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
                 .seed(seed)
                 //.iterations(5)
                 //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.05)
+                .learningRate(0.001)
+                //.dropOut(0.1)
                .updater(Updater.NESTEROVS).momentum(0.9)
                 .weightInit(WeightInit.RELU)
                 .activation(Activation.LEAKYRELU)
