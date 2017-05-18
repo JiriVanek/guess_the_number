@@ -15,8 +15,10 @@ import org.deeplearning4j.earlystopping.trainer.EarlyStoppingTrainer;
 import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.api.Layer;
 import org.deeplearning4j.nn.api.OptimizationAlgorithm;
+import org.deeplearning4j.nn.conf.GradientNormalization;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
+import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.AutoEncoder;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
@@ -53,9 +55,9 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
     private int iterations;                    //Iterations used to classify
     private String directory = "C:\\Temp\\";
     private int maxTime =5; //max time in minutes
-    private int maxEpochs = 10000;
+    private int maxEpochs = 2000;
     private EarlyStoppingResult result;
-    private int noImprovementEpochs = 20;
+    private int noImprovementEpochs = 5;
     private EarlyStoppingConfiguration esConf;
     private String pathname = "C:\\Temp\\SDAEStop"; //pathname+file name for saving model
 
@@ -112,14 +114,14 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
         //model.setListeners(Collections.singletonList((IterationListener) new ScoreIterationListener(listenerFreq))); // Setting listeners
         //model.setListeners(new ScoreIterationListener(100));
 
-        SplitTestAndTrain testAndTrain = dataSet.splitTestAndTrain(0.35);
+        //SplitTestAndTrain testAndTrain = dataSet.splitTestAndTrain(0.35);
         //EarlyStoppingModelSaver saver = new LocalFileModelSaver(directory);
         InMemoryModelSaver <MultiLayerNetwork> saver = new InMemoryModelSaver();
 
 
         List<EpochTerminationCondition> list = new ArrayList<>(2);
         list.add(new MaxEpochsTerminationCondition(maxEpochs));
-        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.00001));
+        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.0004));
         //list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs));
 
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
@@ -134,24 +136,27 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
                 //
                 .scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(dataSet.asList()),true))
                 //.scoreCalculator(new DataSetLossCalculator(new ListDataSetIterator(testAndTrain.getTest().asList(), 100), true))
-                .evaluateEveryNEpochs(3)
+                .evaluateEveryNEpochs(2)
                 .modelSaver(saver)
                 .epochTerminationConditions(list)
                 .build();
 
         //create Estop trainer
-        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf, net, new ListDataSetIterator(testAndTrain.getTrain().asList(), 100));
+        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf, net, new ListDataSetIterator(dataSet.asList(), 200));
         //prepare UI
+
+
+        //Then add the StatsListener to collect this information from the network, as it trains
+        ArrayList listeners = new ArrayList();
+        //listeners.add(new ScoreIterationListener(100));
+        /*
         UIServer uiServer = UIServer.getInstance();
         //Configure where the network information (gradients, score vs. time etc) is to be stored. Here: store in memory.
         StatsStorage statsStorage = new InMemoryStatsStorage();         //Alternative: new FileStatsStorage(File), for saving and loading later
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
         uiServer.attach(statsStorage);
-
-        //Then add the StatsListener to collect this information from the network, as it trains
-        ArrayList listeners = new ArrayList();
-        listeners.add(new ScoreIterationListener(100));
         listeners.add(new StatsListener(statsStorage));
+        */
         net.setListeners(listeners);
         result = trainer.fit();
 
@@ -169,37 +174,33 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
 
     //  initialization of neural net with params. For more info check http://deeplearning4j.org/iris-flower-dataset-tutorial where is more about params
     private MultiLayerConfiguration createConfiguration(int numRows, int outputNum, int seed, int listenerFreq) {
-        System.out.print("Build model....SDA EStop");
+        System.out.print("Build model....Mix EStop");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder() // Starting builder pattern
                 .seed(seed) // Locks in weight initialization for tuning
-                //.weightInit(WeightInit.XAVIER)
-                //.activation(Activation.LEAKYRELU)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(0.06)
-                .iterations(1)
-                //.momentum(0.5) // Momentum rate
+                .weightInit(WeightInit.RELU)
+                .activation(Activation.LEAKYRELU)
+                //.optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .learningRate(0.0005)
+                .updater(Updater.NESTEROVS).momentum(0.9)
+                //.gradientNormalization(GradientNormalization.ClipL2PerLayer)
+                //.iterations(1)
+                //.dropOut(0.6)
+               // .momentum(0.7) // Momentum rate
                 //.momentumAfter(Collections.singletonMap(3, 0.9)) //Map of the iteration to the momentum rate to apply at that iteration
                 .list() // # NN layers (doesn't count input layer)
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
                         .nOut(64)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.LEAKYRELU)
-                        .corruptionLevel(0.2) // Set level of corruption
+                        .corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(64).nOut(200)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.LEAKYRELU)
+                .layer(1, new DenseLayer.Builder().nIn(64).nOut(64)
+                        .build())
+                .layer(2, new AutoEncoder.Builder().nOut(24).nIn(64)
                         //.corruptionLevel(0.2) // Set level of corruption
+                        .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(2, new AutoEncoder.Builder().nOut(24).nIn(200)
-                        .weightInit(WeightInit.RELU)
-                        .activation(Activation.RELU)
-                        //.corruptionLevel(0.1) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.MCXENT)
-                        .build())
-                .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                .layer(3, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
                         .nOut(outputNum).nIn(24).build())
