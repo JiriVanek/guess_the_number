@@ -5,6 +5,7 @@ import org.deeplearning4j.api.storage.StatsStorage;
 import org.deeplearning4j.datasets.iterator.impl.ListDataSetIterator;
 import org.deeplearning4j.earlystopping.EarlyStoppingConfiguration;
 import org.deeplearning4j.earlystopping.EarlyStoppingResult;
+import org.deeplearning4j.earlystopping.listener.EarlyStoppingListener;
 import org.deeplearning4j.earlystopping.saver.InMemoryModelSaver;
 import org.deeplearning4j.earlystopping.scorecalc.DataSetLossCalculator;
 import org.deeplearning4j.earlystopping.termination.EpochTerminationCondition;
@@ -55,7 +56,7 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
     private int iterations;                    //Iterations used to classify
     private String directory = "C:\\Temp\\";
     private int maxTime =5; //max time in minutes
-    private int maxEpochs = 2000;
+    private int maxEpochs = 3000;
     private EarlyStoppingResult result;
     private int noImprovementEpochs = 5;
     private EarlyStoppingConfiguration esConf;
@@ -121,7 +122,7 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
 
         List<EpochTerminationCondition> list = new ArrayList<>(2);
         list.add(new MaxEpochsTerminationCondition(maxEpochs));
-        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.0004));
+        list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs, 0.0005));
         //list.add(new ScoreImprovementEpochTerminationCondition(noImprovementEpochs));
 
         MultiLayerNetwork net = new MultiLayerNetwork(conf);
@@ -142,7 +143,8 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
                 .build();
 
         //create Estop trainer
-        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf, net, new ListDataSetIterator(dataSet.asList(), 200));
+        EarlyStoppingTrainer trainer = new EarlyStoppingTrainer(esConf, net, new ListDataSetIterator(dataSet.asList(), 150));
+
         //prepare UI
 
 
@@ -156,8 +158,9 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
         //Attach the StatsStorage instance to the UI: this allows the contents of the StatsStorage to be visualized
         uiServer.attach(statsStorage);
         listeners.add(new StatsListener(statsStorage));
-        */
+
         net.setListeners(listeners);
+        */
         result = trainer.fit();
 
         bestModel = (MultiLayerNetwork) result.getBestModel();
@@ -194,16 +197,12 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
                         .corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(64).nOut(64)
+                .layer(1, new DenseLayer.Builder().nIn(64).nOut(32)
                         .build())
-                .layer(2, new AutoEncoder.Builder().nOut(24).nIn(64)
-                        //.corruptionLevel(0.2) // Set level of corruption
-                        .lossFunction(LossFunctions.LossFunction.XENT)
-                        .build())
-                .layer(3, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
+                .layer(2, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                        .nOut(outputNum).nIn(24).build())
+                        .nOut(outputNum).nIn(32).build())
                 .pretrain(false) // Do pre training
                 .backprop(true)
                 .build(); // Build on set configuration
