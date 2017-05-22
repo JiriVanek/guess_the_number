@@ -120,18 +120,18 @@ public class MixDeepLearning4j implements IERPClassifier {
                 .list()
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
-                        .nOut(64)
+                        .nOut(128)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         .corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(64).nOut(128)
+                .layer(1, new DenseLayer.Builder().nIn(128).nOut(256)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(2, new AutoEncoder.Builder().nIn(128).nOut(64)
+                .layer(2, new AutoEncoder.Builder().nIn(256).nOut(128)
                         .weightInit(WeightInit.RELU)
                         .activation(Activation.RELU)
                         //.corruptionLevel(0.1) // Set level of corruption
@@ -140,7 +140,7 @@ public class MixDeepLearning4j implements IERPClassifier {
                 .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.XENT)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                       .nOut(outputNum).nIn(64).build())
+                       .nOut(outputNum).nIn(128).build())
                 .pretrain(false).backprop(true).build();
         model = new MultiLayerNetwork(conf); // Passing built configuration to instance of multilayer network
         model.init(); // Initialize mode
