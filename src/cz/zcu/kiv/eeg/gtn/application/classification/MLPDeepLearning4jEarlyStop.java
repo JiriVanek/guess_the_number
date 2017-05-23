@@ -177,16 +177,16 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
                 .weightInit(WeightInit.RELU)
                 .activation(Activation.LEAKYRELU)
                 .list()
-                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(250)
+                .layer(0, new DenseLayer.Builder().nIn(numRows).nOut(350)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(250).nOut(150)
+                .layer(1, new DenseLayer.Builder().nIn(350).nOut(200)
                         //.corruptionLevel(0.2) // Set level of corruption
                         .build())
                 .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                        .nIn(150).nOut(outputNum).build())
+                        .nIn(200).nOut(outputNum).build())
                 .pretrain(false).backprop(true).build();
 
 //70.81
