@@ -193,16 +193,16 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
                 .list() // # NN layers (doesn't count input layer)
                 .layer(0, new AutoEncoder.Builder()
                         .nIn(numRows)
-                        .nOut(64)
+                        .nOut(128)
                         .corruptionLevel(0.1) // Set level of corruption
                         .lossFunction(LossFunctions.LossFunction.XENT)
                         .build())
-                .layer(1, new DenseLayer.Builder().nIn(64).nOut(32)
+                .layer(1, new DenseLayer.Builder().nIn(128).nOut(64)
                         .build())
                 .layer(2, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
                         .weightInit(WeightInit.XAVIER)
                         .activation(Activation.SOFTMAX)
-                        .nOut(outputNum).nIn(32).build())
+                        .nOut(outputNum).nIn(64).build())
                 .pretrain(false) // Do pre training
                 .backprop(true)
                 .build(); // Build on set configuration
