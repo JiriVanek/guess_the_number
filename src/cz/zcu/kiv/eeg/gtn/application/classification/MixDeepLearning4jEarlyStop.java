@@ -186,7 +186,6 @@ public class MixDeepLearning4jEarlyStop implements IERPClassifier {
                 .learningRate(0.0005)
                 .updater(Updater.NESTEROVS).momentum(0.9)
                 //.gradientNormalization(GradientNormalization.ClipL2PerLayer)
-                //.iterations(1)
                 //.dropOut(0.6)
                // .momentum(0.7) // Momentum rate
                 //.momentumAfter(Collections.singletonMap(3, 0.9)) //Map of the iteration to the momentum rate to apply at that iteration
