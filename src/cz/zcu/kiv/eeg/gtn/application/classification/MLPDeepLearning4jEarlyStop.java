@@ -228,7 +228,7 @@ public class MLPDeepLearning4jEarlyStop implements IERPClassifier {
         boolean saveUpdater = true;   //Updater: i.e., the state for Momentum, RMSProp, Adagrad etc. Save this if you want to train your network more in the future
         try {
             ModelSerializer.writeModel(result.getBestModel(), locationToSave, saveUpdater);
-            System.out.println("Saved network params " + result.getBestModel().params());
+            //System.out.println("Saved network params " + result.getBestModel().params());
             System.out.println("Saved");
         } catch (IOException e) {
             e.printStackTrace();
